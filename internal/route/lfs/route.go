@@ -2,7 +2,9 @@ package lfs
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/macaron.v1"
 	log "unknwon.dev/clog/v2"
@@ -13,6 +15,8 @@ import (
 	"gogs.io/gogs/internal/context"
 	"gogs.io/gogs/internal/database"
 	"gogs.io/gogs/internal/lfsx"
+	"gogs.io/gogs/internal/loginlimit"
+	"gogs.io/gogs/internal/netx"
 )
 
 // RegisterRoutes registers LFS routes using given router, and inherits all
@@ -58,11 +62,27 @@ func authenticate(store Store) macaron.Handler {
 			return
 		}
 
+		ip := netx.ClientIP(c.Req.Request, conf.Auth.TrustedProxyCIDRs)
+		lim := loginlimit.Default()
+		if ban, banned, err := lim.Banned(c.Req.Context(), ip, username); err != nil {
+			log.Error("Failed to check login ban: %v", err)
+		} else if banned {
+			c.Resp.Header().Set("Retry-After", strconv.Itoa(ban.RetryAfterSeconds(time.Now())))
+			responseJSON(c.Resp, http.StatusTooManyRequests, responseError{
+				Message: "Too many failed sign-in attempts, please try again later.",
+			})
+			return
+		}
+
 		user, err := store.AuthenticateUser(c.Req.Context(), username, password, -1)
 		if err != nil && !auth.IsErrBadCredentials(err) {
 			internalServerError(c.Resp)
 			log.Error("Failed to authenticate user [name: %s]: %v", username, err)
 			return
+		}
+
+		if err == nil {
+			lim.ResetAccount(c.Req.Context(), username)
 		}
 
 		if err == nil && store.IsTwoFactorEnabled(c.Req.Context(), user.ID) {
@@ -83,6 +103,15 @@ func authenticate(store Store) macaron.Handler {
 				user, err = context.AuthenticateByToken(store, c.Req.Context(), password)
 				if err != nil {
 					if database.IsErrAccessTokenNotExist(err) {
+						if ban, blocked, err := lim.RecordFailure(c.Req.Context(), ip, username); err != nil {
+							log.Error("Failed to record login failure: %v", err)
+						} else if blocked {
+							c.Resp.Header().Set("Retry-After", strconv.Itoa(ban.RetryAfterSeconds(time.Now())))
+							responseJSON(c.Resp, http.StatusTooManyRequests, responseError{
+								Message: "Too many failed sign-in attempts, please try again later.",
+							})
+							return
+						}
 						askCredentials(c.Resp)
 					} else {
 						c.Status(http.StatusInternalServerError)

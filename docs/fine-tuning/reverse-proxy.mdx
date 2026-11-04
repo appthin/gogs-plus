@@ -137,6 +137,10 @@ Running Gogs behind a reverse proxy allows you to serve it on standard ports (80
     }
     ```
 
+    <Note>
+      `X-Real-IP` and `X-Forwarded-For` are only honored for sign-in rate limiting, and only when the proxy address is listed in `[auth] TRUSTED_PROXY_IPS` (loopback is trusted by default). The proxy must overwrite these headers instead of appending client-supplied values, otherwise the limit can be spoofed.
+    </Note>
+
     Set the matching external URL in `custom/conf/app.ini`:
 
     ```ini

@@ -77,6 +77,14 @@ Anchor links inside the form aren't covered by `disabled`. For each, set `tabInd
 
 Swap the submit label to a present-continuous string ("Signing in…", "Verifying…") while submitting. Keep idle and active strings as separate locale keys.
 
+## Shared field components
+
+A field block used on more than one page lives in `components/` and keeps identical markup at every call site. `PasswordInput.tsx` (sign-up, reset password) and `Captcha.tsx` (sign-in, sign-up) follow this pattern.
+
+`Captcha` owns the visible block: the label, the clickable image button that refreshes (with an accessible name and a "Click to refresh" hint), and the text input. Callers pass `value`, `onChange`, `onRefresh`, `refreshKey`, `disabled`, `invalid`, `describedBy`, a tab index for each control, and `inputRef`, then render the server error text as the component's child.
+
+Accessibility contract: the image has `alt`, the refresh control has an `aria-label`, the input has a visible `Label`, the error paragraph is linked through `aria-describedby`, and each page sets explicit tab indexes so its own tab order is preserved.
+
 ## Interactive affordances
 
 Tailwind 4's preflight removes the browser default `cursor: pointer` on `<button>`. Without it, controls visually read as static text. Apply `cursor-pointer` on every interactive element that isn't a plain link: buttons, custom clickable rows, menu triggers, anything whose `onClick` activates an action. `<a href>` keeps the link cursor automatically.

@@ -3,6 +3,8 @@ package netx
 import (
 	"fmt"
 	"net"
+	"net/http"
+	"strings"
 )
 
 var localCIDRs []*net.IPNet
@@ -62,6 +64,82 @@ func IsBlockedLocalHostname(hostname string, allowlist []string) bool {
 			if cidr.Contains(ip) {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// ClientIP returns the client IP address of the request. Forwarding headers
+// are only trusted when the remote address belongs to one of the trusted proxy
+// networks, and the returned address is always normalized to its IPv4 form
+// when it is an IPv4-mapped IPv6 address.
+func ClientIP(r *http.Request, trusted []*net.IPNet) string {
+	remoteIP, ok := parseRemoteAddr(r.RemoteAddr)
+	if !ok {
+		return ""
+	}
+
+	if !containsIP(trusted, remoteIP) {
+		return remoteIP.String()
+	}
+
+	for _, value := range r.Header.Values("X-Forwarded-For") {
+		hops := strings.Split(value, ",")
+		// Walk right to left so a client-supplied prefix cannot bypass the
+		// trusted proxies that actually forwarded the request.
+		for i := len(hops) - 1; i >= 0; i-- {
+			hop := strings.TrimSpace(hops[i])
+			if hop == "" {
+				continue
+			}
+
+			ip, ok := parseIP(hop)
+			if !ok {
+				continue
+			}
+			if !containsIP(trusted, ip) {
+				return ip.String()
+			}
+		}
+	}
+
+	if ip, ok := parseIP(strings.TrimSpace(r.Header.Get("X-Real-IP"))); ok {
+		return ip.String()
+	}
+	return remoteIP.String()
+}
+
+// parseRemoteAddr parses the host part of a remote address that carries a port,
+// e.g., "127.0.0.1:8080" or "[::1]:8080".
+func parseRemoteAddr(address string) (net.IP, bool) {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, false
+	}
+	return parseIP(host)
+}
+
+// parseIP parses a bare IP address, stripping any IPv6 zone and normalizing an
+// IPv4-mapped IPv6 address to its IPv4 form.
+func parseIP(host string) (net.IP, bool) {
+	if i := strings.IndexByte(host, '%'); i >= 0 {
+		host = host[:i]
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return nil, false
+	}
+	if v4 := ip.To4(); v4 != nil {
+		return v4, true
+	}
+	return ip, true
+}
+
+func containsIP(networks []*net.IPNet, ip net.IP) bool {
+	for _, network := range networks {
+		if network != nil && network.Contains(ip) {
+			return true
 		}
 	}
 	return false

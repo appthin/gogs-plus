@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
 	"github.com/flamego/captcha"
+	"github.com/flamego/flamego"
 	"github.com/flamego/session"
 	"github.com/go-macaron/i18n"
 	macaronsession "github.com/go-macaron/session"
@@ -21,6 +22,8 @@ import (
 	"gogs.io/gogs/internal/conf"
 	"gogs.io/gogs/internal/database"
 	"gogs.io/gogs/internal/email"
+	"gogs.io/gogs/internal/loginlimit"
+	"gogs.io/gogs/internal/netx"
 	"gogs.io/gogs/internal/tool"
 	"gogs.io/gogs/internal/userx"
 )
@@ -59,7 +62,8 @@ type loginSource struct {
 }
 
 type getUserSignInResponse struct {
-	LoginSources []loginSource `json:"loginSources"`
+	LoginSources   []loginSource `json:"loginSources"`
+	CaptchaEnabled bool          `json:"captchaEnabled"`
 }
 
 type getUserSignUpResponse struct {
@@ -167,13 +171,17 @@ func getUserSignIn(r *http.Request) (statusCode int, resp *getUserSignInResponse
 	for _, s := range sources {
 		loginSources = append(loginSources, loginSource{ID: s.ID, Name: s.Name, IsDefault: s.IsDefault})
 	}
-	return http.StatusOK, &getUserSignInResponse{LoginSources: loginSources}, nil
+	return http.StatusOK, &getUserSignInResponse{
+		LoginSources:   loginSources,
+		CaptchaEnabled: conf.Security.EnableLoginCaptcha,
+	}, nil
 }
 
 type userSignInRequest struct {
 	Username    string `json:"username" validate:"required,max=254"`
 	Password    string `json:"password" validate:"required,max=255"`
 	LoginSource int64  `json:"loginSource"`
+	Captcha     string `json:"captcha"`
 }
 
 type getUserResetPasswordResponse struct {
@@ -264,11 +272,66 @@ type userSignInResponse struct {
 	MFA bool `json:"mfa,omitempty"`
 }
 
-func postUserSignIn(r *http.Request, sess session.Session, mc *macaron.Context, l i18n.Locale, req userSignInRequest) (statusCode int, resp any, err error) {
-	u, err := database.Handle.Users().Authenticate(r.Context(), req.Username, req.Password, req.LoginSource)
+type userSignInRateLimitResponse struct {
+	Error      string `json:"error"`
+	RetryAfter int    `json:"retryAfter"`
+}
+
+// rateLimitedSignIn renders the response for a banned IP address or account.
+// The message rounds the remaining time up to whole minutes, while the body and
+// the Retry-After header report seconds.
+func rateLimitedSignIn(c flamego.Context, l i18n.Locale, ban loginlimit.Ban) (statusCode int, resp any, err error) {
+	retryAfter := ban.RetryAfterSeconds(time.Now())
+	key := "auth.sign_in_rate_limited"
+	if ban.Kind == loginlimit.KindAccount {
+		key = "auth.sign_in_locked"
+	}
+	c.ResponseWriter().Header().Set("Retry-After", strconv.Itoa(retryAfter))
+	return http.StatusTooManyRequests, &userSignInRateLimitResponse{
+		Error:      l.Tr(key, ban.RetryAfterMinutes(time.Now())),
+		RetryAfter: retryAfter,
+	}, nil
+}
+
+func postUserSignIn(
+	r *http.Request,
+	sess session.Session,
+	mc *macaron.Context,
+	c flamego.Context,
+	cpt captcha.Captcha,
+	l i18n.Locale,
+	req userSignInRequest,
+) (statusCode int, resp any, err error) {
+	ctx := r.Context()
+	limiter := loginlimit.Default()
+	ip := netx.ClientIP(r, conf.Auth.TrustedProxyCIDRs)
+
+	ban, banned, err := limiter.Banned(ctx, ip, req.Username)
+	if err != nil {
+		// A broken ban file must not lock everyone out.
+		log.Error("postUserSignIn: check login ban: %v", err)
+	} else if banned {
+		return rateLimitedSignIn(c, l, ban)
+	}
+
+	if conf.Security.EnableLoginCaptcha && !cpt.ValidText(req.Captcha) {
+		msg := l.Tr("form.captcha_incorrect")
+		return http.StatusUnauthorized, &bindingErrorResponse{
+			Fields: fieldErrors{"captcha": &msg},
+		}, nil
+	}
+
+	u, err := database.Handle.Users().Authenticate(ctx, req.Username, req.Password, req.LoginSource)
 	if err != nil {
 		switch {
 		case auth.IsErrBadCredentials(err):
+			ban, blocked, recordErr := limiter.RecordFailure(ctx, ip, req.Username)
+			if recordErr != nil {
+				log.Error("postUserSignIn: record login failure: %v", recordErr)
+			}
+			if blocked {
+				return rateLimitedSignIn(c, l, *ban)
+			}
 			return http.StatusUnauthorized, &bindingErrorResponse{
 				Error:  l.Tr("form.username_password_incorrect"),
 				Fields: fieldErrors{"username": nil, "password": nil},
@@ -281,7 +344,9 @@ func postUserSignIn(r *http.Request, sess session.Session, mc *macaron.Context, 
 		}
 	}
 
-	if database.Handle.TwoFactors().IsEnabled(r.Context(), u.ID) {
+	limiter.ResetAccount(ctx, req.Username)
+
+	if database.Handle.TwoFactors().IsEnabled(ctx, u.ID) {
 		sess.Set("mfaUserID", u.ID)
 		return http.StatusOK, &userSignInResponse{MFA: true}, nil
 	}

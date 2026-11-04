@@ -21,6 +21,8 @@ import (
 	"gogs.io/gogs/internal/context"
 	"gogs.io/gogs/internal/database"
 	"gogs.io/gogs/internal/lazyregexp"
+	"gogs.io/gogs/internal/loginlimit"
+	"gogs.io/gogs/internal/netx"
 	"gogs.io/gogs/internal/pathx"
 	"gogs.io/gogs/internal/tool"
 )
@@ -143,11 +145,25 @@ func HTTPContexter(store Store) macaron.Handler {
 			return
 		}
 
+		ip := netx.ClientIP(c.Req.Request, conf.Auth.TrustedProxyCIDRs)
+		lim := loginlimit.Default()
+		if ban, banned, err := lim.Banned(c.Req.Context(), ip, authUsername); err != nil {
+			log.Error("Failed to check login ban: %v", err)
+		} else if banned {
+			c.Header().Set("Retry-After", strconv.Itoa(ban.RetryAfterSeconds(time.Now())))
+			c.Error(http.StatusTooManyRequests, "Too many failed sign-in attempts, please try again later.")
+			return
+		}
+
 		authUser, err := store.AuthenticateUser(c.Req.Context(), authUsername, authPassword, -1)
 		if err != nil && !auth.IsErrBadCredentials(err) {
 			c.Status(http.StatusInternalServerError)
 			log.Error("Failed to authenticate user [name: %s]: %v", authUsername, err)
 			return
+		}
+
+		if err == nil {
+			lim.ResetAccount(c.Req.Context(), authUsername)
 		}
 
 		// If username and password combination failed, try again using either username
@@ -163,6 +179,13 @@ func HTTPContexter(store Store) macaron.Handler {
 				authUser, err = context.AuthenticateByToken(store, c.Req.Context(), authPassword)
 				if err != nil {
 					if database.IsErrAccessTokenNotExist(err) {
+						if ban, blocked, err := lim.RecordFailure(c.Req.Context(), ip, authUsername); err != nil {
+							log.Error("Failed to record login failure: %v", err)
+						} else if blocked {
+							c.Header().Set("Retry-After", strconv.Itoa(ban.RetryAfterSeconds(time.Now())))
+							c.Error(http.StatusTooManyRequests, "Too many failed sign-in attempts, please try again later.")
+							return
+						}
 						askCredentials(c, http.StatusUnauthorized, "")
 					} else {
 						c.Status(http.StatusInternalServerError)

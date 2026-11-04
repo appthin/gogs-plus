@@ -1,111 +1,164 @@
-
- <p>
-  <div align="center">
-    <img src="docs/images/logo-light.svg#gh-light-mode-only" alt="Gogs">
-    <img src="docs/images/logo-dark.svg#gh-dark-mode-only" alt="Gogs">
-  </div>
-  <div align="center">
-    <a href="https://github.com/gogs/gogs/actions?query=branch%3Amain"><img
-  src="https://img.shields.io/github/checks-status/gogs/gogs/main?logo=github&style=for-the-badge" alt="GitHub Workflow Status"></a>
-    <a href="https://sourcegraph.com/github.com/gogs/gogs"><img
-src="https://img.shields.io/badge/view%20on-Sourcegraph-brightgreen.svg?style=for-the-badge&logo=sourcegraph" alt="Sourcegraph"></a>
-  </div>
-  <div align="center">
-    👉 Deploy on DigitalOcean and <a href="https://m.do.co/c/5aeb02268b55">get $200 in free credits</a>!
-  </div>
-</p>
-
-## 🔮 Vision
-
-The Gogs (`/gɑgz/`) project aims to build a simple, stable and extensible self-hosted Git service that can be set up in the most painless way. With Go, this can be done with an independent binary distribution across all platforms that Go supports, including Linux, macOS, Windows and ARM-based systems.
-
-## 📡 Overview
-
-- Please visit [our home page](https://gogs.io) for user documentation.
-- Please refer to [CHANGELOG.md](CHANGELOG.md) for list of changes in each releases.
-- Want to try it before doing anything else? Do it [online](https://try.gogs.io/gogs/gogs)!
-- Having trouble? Help yourself with [troubleshooting](https://gogs.io/asking/troubleshooting) or ask questions in [Discussions](https://github.com/gogs/gogs/discussions).
-- Want to help with localization? Check out the [localization documentation](https://gogs.io/advancing/localization).
-- Ready to get hands dirty? Read our [contributing guide](.github/CONTRIBUTING.md).
-- Hmm... What about APIs? We have experimental support with [documentation](https://gogs.io/api-reference).
-
-## 💌 Features
-
-- User dashboard, user profile and activity timeline.
-- Access repositories via SSH, HTTP and HTTPS protocols.
-- User, organization and repository management.
-- Repository and organization webhooks, including Slack, Discord and Dingtalk.
-- Repository Git hooks, deploy keys and Git LFS.
-- Repository issues, pull requests, wiki, protected branches and collaboration.
-- Migrate and mirror repositories with wiki from other code hosts.
-- Web editor for quick editing repository files and wiki.
-- Jupyter Notebook and PDF rendering.
-- Authentication via SMTP, LDAP, reverse proxy, GitHub.com and GitHub Enterprise with 2FA.
-- Customize HTML templates, static files and many others.
-- Rich database backend support, including PostgreSQL, MySQL, MariaDB, SQLite3 or any database backend that speaks one of those protocols.
-- Have localization over [31 languages](https://crowdin.com/project/gogs).
-
-## 💾 Hardware requirements
-
-- A Raspberry Pi or $5 Digital Ocean Droplet is more than enough to get you started. Some even use 64MB RAM Docker [CaaS](https://www.docker.com/blog/containers-as-a-service-caas/).
-- 2 CPU cores and 512MB RAM would be the baseline for teamwork.
-- Increase CPU cores when your team size gets significantly larger, memory footprint remains low.
-
-## 💻 Browser support
-
-- Please see [Semantic UI](https://github.com/Semantic-Org/Semantic-UI#browser-support) for specific versions of supported browsers.
-- The smallest resolution officially supported is **1024*768**, however the UI may still look right in smaller resolutions, but no promises or fixes.
-
-## 📜 Installation
-
-Please follow [the guide in our documentation](https://gogs.io/getting-started/installation).
-
-### Deploy to cloud
-
-- [Cloudron](https://www.cloudron.io/store/gogs.html)
-- [YunoHost](https://github.com/YunoHost-Apps/gogs_ynh)
-- [alwaysdata](https://www.alwaysdata.com/en/marketplace/gogs/)
-
-### Tutorials
-
-- [Private Git Web Portal in Raspberry PI With Gogs](https://peppe8o.com/private-git-web-portal-in-raspberry-pi-with-gogs/)
-- [How To Set Up Gogs on Ubuntu 14.04](https://www.digitalocean.com/community/tutorials/how-to-set-up-gogs-on-ubuntu-14-04)
-- [Run your own GitHub-like service with the help of Docker](https://blog.hypriot.com/post/run-your-own-github-like-service-with-docker/)
-- [Dockerized Gogs git server and alpine postgres in 20 minutes or less](https://garthwaite.org/docker-gogs.html)
-- [Host Your Own Private GitHub with Gogs](https://eladnava.com/host-your-own-private-github-with-gogs-io/)
-- [使用 Gogs 搭建自己的 Git 服务器](https://blog.mynook.info/post/host-your-own-git-server-using-gogs/) (Chinese)
-- [阿里云上 Ubuntu 14.04 64 位安装 Gogs](https://my.oschina.net/luyao/blog/375654) (Chinese)
-- [Installing Gogs on FreeBSD](https://www.codejam.info/2015/03/installing-gogs-on-freebsd.html)
-- [How to install Gogs on a Linux Server (DigitalOcean)](https://www.youtube.com/watch?v=deSfX0gqefE)
-
-## 📦 Software, service and product support
-
-- [Jenkins](https://plugins.jenkins.io/gogs-webhook/) (CI)
-- [Puppet](https://forge.puppet.com/modules/Siteminds/gogs) (IT)
-- [Synology](https://www.synology.com) (Docker)
-- [Syncloud](https://syncloud.org/) (App Store)
-
-## 🙇‍♂️ Acknowledgments
-
-<p>This project is proudly supported by:</p>
 <p>
-  <a href="https://m.do.co/c/5aeb02268b55">
-    <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/SVG/DO_Logo_horizontal_blue.svg" width="201px">
-  </a>
+  <div align="center">
+    <img src="docs/images/logo-light.svg#gh-light-mode-only" alt="Gogs Plus">
+    <img src="docs/images/logo-dark.svg#gh-dark-mode-only" alt="Gogs Plus">
+  </div>
+  <div align="center">
+    <strong>A fork of Gogs with sign-in protection and a portable Windows build.</strong>
+  </div>
 </p>
 
-Other acknowledgments:
+## What this is
 
-- Thanks [Egon Elbre](https://twitter.com/egonelbre) for designing the original version of the logo.
-- Thanks [Mintlify](https://mintlify.com) for sponsoring open source documentation plan.
-- Thanks [Crowdin](https://crowdin.com) for sponsoring open source translation plan.
-- Thanks [Buildkite](https://buildkite.com) for sponsoring open source CI/CD plan.
+`gogs-plus` is a fork of [Gogs](https://github.com/gogs/gogs), the painless self-hosted Git service written in Go. Upstream provides the application. This fork adds a set of hardening changes on top, and tracks upstream `main` so fixes and features keep flowing in.
 
-## 👋 Contributors
+If you want the original project, use [gogs/gogs](https://github.com/gogs/gogs). This repository is maintained independently and is not affiliated with the upstream maintainers.
 
-- See [contributors page](https://github.com/gogs/gogs/graphs/contributors) for top 100 contributors.
-- See [TRANSLATORS](conf/locale/TRANSLATORS) for public list of translators.
+## Features
 
-## ⚖️ License
+Everything upstream Gogs provides, plus the additions listed below.
 
-This project is under the MIT License. See the [LICENSE](https://github.com/gogs/gogs/blob/main/LICENSE) file for the full license text.
+Upstream functionality:
+
+- User dashboard, profiles, and activity timeline.
+- Repositories over SSH, HTTP, and HTTPS.
+- User, organization, and repository management with teams and collaboration.
+- Issues, pull requests, wiki, protected branches, releases, and labels.
+- Repository and organization webhooks, including Slack, Discord, and Dingtalk.
+- Git hooks, deploy keys, and Git LFS.
+- Repository migration and mirroring from other hosts.
+- Web editor for repository files and wiki pages.
+- Jupyter Notebook and PDF rendering.
+- Authentication through SMTP, LDAP, PAM, reverse proxy, and GitHub with 2FA.
+- PostgreSQL, MySQL, MariaDB, and SQLite3 backends.
+- Localization for 30+ languages.
+
+Added in this fork:
+
+- **Sign-in rate limiting.** Counts failed sign-in attempts per client IP and optionally bans the address for a configurable window.
+- **Account lockout.** Optionally locks an account after repeated failures, independent of the IP limit.
+- **Sign-in captcha**, enabled by default.
+- **Coverage beyond the web login.** The same counters and bans apply to Git HTTP Basic authentication, Git LFS, and the shared Macaron Basic auth path, so cloning over HTTP cannot be used to sidestep the limit.
+- **File-backed bans.** Bans live in a JSON file rather than memory, so they survive restarts, can be inspected and hand-edited, and take effect on the next request without a restart.
+- **Ban management page** at `/admin/login-bans`, showing the file location, current bans, the last account attempted from each banned IP, and buttons to unban or add bans.
+- **Portable Windows package** with vendored configuration and a launcher, built from this tree.
+
+Details of the design, threat model, and trade-offs are in [docs/dev/login-protection.md](docs/dev/login-protection.md).
+
+## Sign-in protection
+
+Configuration lives under `[security]` in `app.ini`:
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `ENABLE_LOGIN_CAPTCHA` | `true` | Show a captcha on the sign-in page. |
+| `ENABLE_LOGIN_RATE_LIMIT` | `false` | Ban a client IP after repeated failures. |
+| `LOGIN_RATE_LIMIT_ATTEMPTS` | `10` | Failures allowed per IP within the window. |
+| `LOGIN_FAILURE_WINDOW` | `5m` | Counting window for both IP and account failures. |
+| `LOGIN_RATE_LIMIT_BLOCK_DURATION` | `15m` | How long an IP stays banned. |
+| `ENABLE_LOGIN_LOCKOUT` | `false` | Lock an account after repeated failures. |
+| `LOGIN_LOCKOUT_ATTEMPTS` | `10` | Failures allowed per account within the window. |
+| `LOGIN_LOCKOUT_DURATION` | `15m` | How long an account stays locked. |
+| `LOGIN_BAN_FILE` | `data/login_bans.json` | Where bans are stored. |
+
+Client IPs are taken from the connection by default. `X-Forwarded-For` and `X-Real-IP` are honored only when the immediate peer is listed in `[auth] TRUSTED_PROXY_IPS`, and the rightmost untrusted hop wins, so a directly connected client cannot spoof its address.
+
+Bans apply to the web sign-in form, Git HTTP Basic authentication, and Git LFS. Access tokens are never counted as failures: a client sending a token in the password field fails the password check and then succeeds by token, which must not accumulate toward a ban.
+
+## Quick start on Windows
+
+The `dist` folder in a local build is a self-contained package. See `dist/README.txt` for the full notes.
+
+```powershell
+cd dist
+.\gogs.exe admin create-user --name yourname --password "a strong password" --email you@example.com --admin
+.\start.bat
+```
+
+Then open <http://localhost:3000/>. The first account created becomes the site administrator.
+
+`admin`, `user`, `api`, `repo`, and several other words are reserved usernames and are rejected by `create-user`.
+
+## Build from source
+
+Requirements:
+
+- Go 1.27 or newer.
+- Node.js 24 and pnpm 11 for the web frontend.
+- Git on `PATH`.
+- A C compiler only if you build with the `pam` tag.
+
+```bash
+# Install dependencies and generate mocks.
+go mod tidy
+go generate ./...
+
+# Build the frontend into public/dist.
+pnpm install --frozen-lockfile
+pnpm --filter gogs-web run build
+
+# Build the server with the frontend embedded.
+go build -tags prod -trimpath -o gogs ./cmd/gogs
+```
+
+The `prod` build tag embeds `public/dist` into the binary. Without it, the server expects a Vite dev server for frontend assets.
+
+Tasks are also available through [moon](https://moonrepo.dev/):
+
+```bash
+moon run gogs:build-prod
+moon run gogs:lint
+moon run web:lint
+moon run web:build
+```
+
+Note that `moon run gogs:lint` runs `go generate` first through its dependency chain. On this tree the regenerated mocks differ from the committed ones, which trips an import-cycle typecheck error. If you hit it, run `go generate ./...`, restore the two generated mock files, then run `golangci-lint run` directly.
+
+## Documentation
+
+- [Design and implementation notes for sign-in protection](docs/dev/login-protection.md)
+- [Configuration primer](docs/fine-tuning/configuration-primer.mdx)
+- [Reverse proxy setup](docs/fine-tuning/reverse-proxy.mdx)
+- [Authentication backends](docs/advancing/authentication.mdx)
+- [Local development](docs/dev/local_development.md)
+- [CHANGELOG.md](CHANGELOG.md) for what changed in each release
+- Upstream user documentation at [gogs.io](https://gogs.io)
+
+## Disclaimer
+
+This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+
+Additional points specific to this fork:
+
+- **Not affiliated with upstream.** This is an independent fork. Do not report bugs in this fork to the upstream Gogs project, and do not assume upstream has reviewed or endorsed these changes.
+- **Security software is not a guarantee.** The sign-in protection here reduces brute-force exposure but does not make a deployment secure on its own. It does not replace TLS, patching, access control, backups, or monitoring.
+- **You own your deployment.** Running a public Git service means you are responsible for the data on it, the accounts you issue, and compliance with any law or policy that applies to you.
+- **Defaults may change.** Options, defaults, storage formats, and behavior may change between commits on `main`. Read `CHANGELOG.md` before upgrading, and keep a backup of `data/` and `custom/`.
+- **Third-party components** carry their own licenses. Review them before redistribution.
+
+Use at your own risk. If any of the above is not acceptable, do not use this software.
+
+## Copyright and licensing
+
+Copyright (c) The Gogs Authors.
+Copyright (c) 2026 the gogs-plus contributors for changes made in this fork.
+
+This project is distributed under the MIT License. See [LICENSE](LICENSE) for the full text.
+
+The MIT License permits use, modification, and redistribution provided the copyright notice and permission notice are retained. It provides no warranty. This fork retains the original copyright notice as required. All upstream work remains the property of its respective authors.
+
+The Gogs name and logo belong to the upstream project. This fork uses them to identify the software's origin and does not claim ownership.
+
+## Contributing
+
+- Read [AGENTS.md](AGENTS.md) for the conventions this fork follows.
+- Run `moon run gogs:lint` and `moon run web:lint` before opening a pull request.
+- Keep changes to `conf/locale/locale_en-US.ini` only. Other locale files are community-maintained.
+- For security issues, read [SECURITY.md](SECURITY.md) first and report privately rather than in a public issue.
+
+## Acknowledgments
+
+Gogs would not exist without its upstream authors and contributors. See the [upstream contributors page](https://github.com/gogs/gogs/graphs/contributors) and the upstream `TRANSLATORS` file.
+
+- Thanks [Egon Elbre](https://twitter.com/egonelbre) for designing the original logo.
+- Thanks [Mintlify](https://mintlify.com), [Crowdin](https://crowdin.com), and [Buildkite](https://buildkite.com) for sponsoring the upstream documentation, translation, and CI plans.

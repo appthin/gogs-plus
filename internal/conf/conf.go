@@ -200,6 +200,24 @@ func Init(customConf string) error {
 		return errors.Wrap(err, "mapping [security] section")
 	}
 
+	if Security.LoginBanFile == "" {
+		Security.LoginBanFile = "data/login_bans.json"
+	}
+	Security.LoginBanFile = ensureAbs(Security.LoginBanFile)
+
+	if Security.LoginFailureWindow <= 0 {
+		log.Warn("[security] LOGIN_FAILURE_WINDOW must be positive, using 5m")
+		Security.LoginFailureWindow = 5 * time.Minute
+	}
+	if Security.LoginRateLimitBlockDuration <= 0 {
+		log.Warn("[security] LOGIN_RATE_LIMIT_BLOCK_DURATION must be positive, using 15m")
+		Security.LoginRateLimitBlockDuration = 15 * time.Minute
+	}
+	if Security.LoginLockoutDuration <= 0 {
+		log.Warn("[security] LOGIN_LOCKOUT_DURATION must be positive, using 15m")
+		Security.LoginLockoutDuration = 15 * time.Minute
+	}
+
 	if Security.SecretKey == "" || Security.SecretKey == "CHANGE-ME-OR-FAIL-TO-START" {
 		return errors.New("[security] SECRET_KEY must be set to a strong, unguessable value")
 	}

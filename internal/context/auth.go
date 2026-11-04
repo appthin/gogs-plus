@@ -5,7 +5,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-macaron/session"
@@ -16,6 +18,8 @@ import (
 	"gogs.io/gogs/internal/auth"
 	"gogs.io/gogs/internal/conf"
 	"gogs.io/gogs/internal/database"
+	"gogs.io/gogs/internal/loginlimit"
+	"gogs.io/gogs/internal/netx"
 	"gogs.io/gogs/internal/tool"
 )
 
@@ -226,14 +230,29 @@ func authenticatedUser(store AuthStore, ctx *macaron.Context, sess session.Store
 			if len(auths) == 2 && auths[0] == "Basic" {
 				uname, passwd, _ := tool.BasicAuthDecode(auths[1])
 
+				ip := netx.ClientIP(ctx.Req.Request, conf.Auth.TrustedProxyCIDRs)
+				if ban, banned, err := loginlimit.Default().Banned(ctx.Req.Context(), ip, uname); err != nil {
+					log.Error("Failed to check login ban: %v", err)
+				} else if banned {
+					writeTooManyRequests(ctx, ban)
+					return nil, false, false
+				}
+
 				u, err := store.AuthenticateUser(ctx.Req.Context(), uname, passwd, -1)
 				if err != nil {
-					if !auth.IsErrBadCredentials(err) {
+					if auth.IsErrBadCredentials(err) {
+						if ban, blocked, err := loginlimit.Default().RecordFailure(ctx.Req.Context(), ip, uname); err != nil {
+							log.Error("Failed to record login failure: %v", err)
+						} else if blocked {
+							writeTooManyRequests(ctx, *ban)
+						}
+					} else {
 						log.Error("Failed to authenticate user: %v", err)
 					}
 					return nil, false, false
 				}
 
+				loginlimit.Default().ResetAccount(ctx.Req.Context(), uname)
 				return u, true, false
 			}
 		}
@@ -246,6 +265,19 @@ func authenticatedUser(store AuthStore, ctx *macaron.Context, sess session.Store
 		return nil, false, false
 	}
 	return u, false, isTokenAuth
+}
+
+// writeTooManyRequests writes a 429 response for a banned IP address or account.
+// It does not set WWW-Authenticate because Git clients would otherwise keep
+// re-prompting.
+func writeTooManyRequests(ctx *macaron.Context, ban loginlimit.Ban) {
+	now := time.Now()
+	key := "auth.sign_in_rate_limited"
+	if ban.Kind == loginlimit.KindAccount {
+		key = "auth.sign_in_locked"
+	}
+	ctx.Header().Set("Retry-After", strconv.Itoa(ban.RetryAfterSeconds(now)))
+	ctx.Error(http.StatusTooManyRequests, ctx.Tr(key, ban.RetryAfterMinutes(now)))
 }
 
 // isRequestFromTrustedProxy reports whether the request's immediate remote

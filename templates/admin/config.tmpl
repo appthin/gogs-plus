@@ -210,6 +210,27 @@
 						<dd>{{.Security.LoginStatusCookieName}}</dd>
 						<dt>{{.i18n.Tr "admin.config.security.local_network_allowlist"}}</dt>
 						<dd><code>{{.Security.LocalNetworkAllowlist}}</code></dd>
+
+						<div class="ui divider"></div>
+
+						<dt>{{.i18n.Tr "admin.config.security.enable_login_rate_limit"}}</dt>
+						<dd><i class="fa fa{{if .Security.EnableLoginRateLimit}}-check{{end}}-square-o"></i></dd>
+						<dt>{{.i18n.Tr "admin.config.security.login_rate_limit_attempts"}}</dt>
+						<dd>{{.Security.LoginRateLimitAttempts}}</dd>
+						<dt>{{.i18n.Tr "admin.config.security.login_failure_window"}}</dt>
+						<dd>{{.Security.LoginFailureWindow}}</dd>
+						<dt>{{.i18n.Tr "admin.config.security.login_rate_limit_block_duration"}}</dt>
+						<dd>{{.Security.LoginRateLimitBlockDuration}}</dd>
+						<dt>{{.i18n.Tr "admin.config.security.enable_login_lockout"}}</dt>
+						<dd><i class="fa fa{{if .Security.EnableLoginLockout}}-check{{end}}-square-o"></i></dd>
+						<dt>{{.i18n.Tr "admin.config.security.login_lockout_attempts"}}</dt>
+						<dd>{{.Security.LoginLockoutAttempts}}</dd>
+						<dt>{{.i18n.Tr "admin.config.security.login_lockout_duration"}}</dt>
+						<dd>{{.Security.LoginLockoutDuration}}</dd>
+						<dt>{{.i18n.Tr "admin.config.security.enable_login_captcha"}}</dt>
+						<dd><i class="fa fa{{if .Security.EnableLoginCaptcha}}-check{{end}}-square-o"></i></dd>
+						<dt>{{.i18n.Tr "admin.config.security.login_ban_file"}}</dt>
+						<dd><code>{{.Security.LoginBanFile}}</code></dd>
 					</dl>
 				</div>
 

@@ -43,6 +43,17 @@ var (
 		EnableLoginStatusCookie bool
 		LoginStatusCookieName   string
 		LocalNetworkAllowlist   []string `delim:","`
+
+		// Sign-in protection
+		EnableLoginRateLimit        bool
+		LoginRateLimitAttempts      int
+		LoginFailureWindow          time.Duration
+		LoginRateLimitBlockDuration time.Duration
+		EnableLoginLockout          bool
+		LoginLockoutAttempts        int
+		LoginLockoutDuration        time.Duration
+		EnableLoginCaptcha          bool
+		LoginBanFile                string
 	}
 
 	// Email settings

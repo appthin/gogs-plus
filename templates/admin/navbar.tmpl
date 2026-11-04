@@ -19,6 +19,9 @@
 		<a class="{{if .PageIsAdminConfig}}active{{end}} item" href="{{AppSubURL}}/admin/config">
 			{{.i18n.Tr "admin.config"}}
 		</a>
+		<a class="{{if .PageIsAdminLoginBans}}active{{end}} item" href="{{AppSubURL}}/admin/login-bans">
+			{{.i18n.Tr "admin.login_bans"}}
+		</a>
 		<a class="{{if .PageIsAdminNotices}}active{{end}} item" href="{{AppSubURL}}/admin/notices">
 			{{.i18n.Tr "admin.notices"}}
 		</a>

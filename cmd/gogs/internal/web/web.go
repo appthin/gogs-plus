@@ -35,6 +35,7 @@ import (
 	"gogs.io/gogs/internal/database"
 	"gogs.io/gogs/internal/email"
 	"gogs.io/gogs/internal/form"
+	"gogs.io/gogs/internal/loginlimit"
 	"gogs.io/gogs/internal/markup"
 	"gogs.io/gogs/internal/osx"
 	"gogs.io/gogs/internal/route"
@@ -57,6 +58,19 @@ func Run(configPath string, portOverride int) error {
 	err := initServices(configPath)
 	if err != nil {
 		return errors.Wrap(err, "initialize application")
+	}
+
+	if err = loginlimit.Init(loginlimit.Options{
+		EnableIP:        conf.Security.EnableLoginRateLimit,
+		IPAttempts:      conf.Security.LoginRateLimitAttempts,
+		Window:          conf.Security.LoginFailureWindow,
+		IPBlockDuration: conf.Security.LoginRateLimitBlockDuration,
+		EnableLockout:   conf.Security.EnableLoginLockout,
+		LockoutAttempts: conf.Security.LoginLockoutAttempts,
+		LockoutDuration: conf.Security.LoginLockoutDuration,
+		BanFile:         conf.Security.LoginBanFile,
+	}); err != nil {
+		return errors.Wrap(err, "initialize login limiter")
 	}
 
 	m, err := newMacaron()
@@ -143,6 +157,13 @@ func Run(configPath string, portOverride int) error {
 			m.Get("/config", admin.Config)
 			m.Post("/config/test_mail", admin.SendTestMail)
 			m.Get("/monitor", admin.Monitor)
+
+			m.Group("/login-bans", func() {
+				m.Get("", admin.LoginBans)
+				m.Post("/ban", admin.LoginBanBan)
+				m.Post("/unban", admin.LoginBanUnban)
+				m.Post("/reload", admin.LoginBanReload)
+			})
 
 			m.Group("/users", func() {
 				m.Get("", admin.Users)

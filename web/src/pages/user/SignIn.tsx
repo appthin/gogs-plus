@@ -1,8 +1,9 @@
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Captcha } from "@/components/Captcha";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ export interface LoginSource {
 
 export interface SignInPage {
   loginSources: LoginSource[];
+  captchaEnabled: boolean;
 }
 
 interface SignInResponse {
@@ -28,10 +30,17 @@ interface SignInResponse {
 interface SignInErrorResponse {
   error?: string;
   fields?: Record<string, string | null>;
+  retryAfter?: number;
 }
 
 // Field display order; the first key with a server-side error gets focus.
-const FIELD_ORDER = ["username", "password"] as const;
+const FIELD_ORDER = ["username", "password", "captcha"] as const;
+
+// Gogs INI strings carry Go printf placeholders, not i18next `{name}` ones,
+// so the remaining seconds are substituted by hand (same as relative-time.ts).
+function fillRetryAfter(template: string, seconds: number): string {
+  return template.replace(/%(?:\[1\])?s/, String(seconds));
+}
 
 const route = getRouteApi("/user/sign-in");
 
@@ -39,21 +48,45 @@ export function SignIn() {
   const { t } = useTranslation();
   usePageTitle(t("sign_in"));
   const navigate = useNavigate();
-  const { loginSources } = route.useLoaderData();
+  const { loginSources, captchaEnabled } = route.useLoaderData();
   const defaultSource = loginSources.find((s) => s.isDefault);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginSource, setLoginSource] = useState<number>(defaultSource?.id ?? 0);
+  const [captcha, setCaptcha] = useState("");
+  const [captchaRefresh, setCaptchaRefresh] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [retryAfter, setRetryAfter] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
   const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const captchaRef = useRef<HTMLInputElement>(null);
+  const countingDown = retryAfter > 0;
+  const submitLabel = submitting
+    ? t("auth.sign_in_submitting")
+    : countingDown
+      ? fillRetryAfter(t("auth.sign_in_retry_after"), retryAfter)
+      : t("sign_in");
+
+  function refreshCaptcha() {
+    setCaptcha("");
+    setCaptchaRefresh((value) => value + 1);
+  }
+
+  useEffect(() => {
+    if (!countingDown) return;
+    const id = window.setInterval(() => {
+      setRetryAfter((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [countingDown]);
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (countingDown) return;
     setFormError(null);
     setFieldErrors({});
     setSubmitting(true);
@@ -63,12 +96,11 @@ export function SignIn() {
           method: "POST",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password, loginSource }),
+          body: JSON.stringify({ username, password, loginSource, captcha }),
         });
         if (!res.ok) {
           const body = (await res.json().catch(() => ({}))) as SignInErrorResponse;
           if (body.error) setFormError(body.error);
-          else setFormError(null);
           let focusField: (typeof FIELD_ORDER)[number] | undefined;
           if (body.fields) {
             setFieldErrors(body.fields);
@@ -77,12 +109,18 @@ export function SignIn() {
           if (!body.error && !body.fields) {
             setFormError(t("auth.sign_in_failed"));
           }
+          if (res.status === 429) {
+            const retry = body.retryAfter ?? Number(res.headers.get("Retry-After"));
+            if (Number.isFinite(retry) && retry > 0) setRetryAfter(Math.ceil(retry));
+          }
           setSubmitting(false);
+          if (captchaEnabled) refreshCaptcha();
           // Defer focus past the React commit so the fieldset is re-enabled
           // (.focus() is a no-op while the field is inside a disabled fieldset).
           requestAnimationFrame(() => {
             if (focusField === "username") usernameRef.current?.focus();
             else if (focusField === "password") passwordRef.current?.focus();
+            else if (focusField === "captcha") captchaRef.current?.focus();
           });
           return;
         }
@@ -103,6 +141,7 @@ export function SignIn() {
       } catch {
         setFormError(t("auth.sign_in_failed"));
         setSubmitting(false);
+        if (captchaEnabled) refreshCaptcha();
       }
     })();
   }
@@ -156,7 +195,7 @@ export function SignIn() {
                     <Button variant="link" size="inline" asChild>
                       <a
                         href={subUrl("/user/reset-password")}
-                        tabIndex={submitting ? -1 : 6}
+                        tabIndex={submitting ? -1 : 8}
                         aria-disabled={submitting || undefined}
                         className={submitting ? "pointer-events-none opacity-50" : undefined}
                         onClick={(e) => {
@@ -229,14 +268,35 @@ export function SignIn() {
                   </div>
                 )}
 
+                {captchaEnabled && (
+                  <Captcha
+                    inputRef={captchaRef}
+                    value={captcha}
+                    onChange={setCaptcha}
+                    onRefresh={refreshCaptcha}
+                    refreshKey={captchaRefresh}
+                    disabled={submitting}
+                    invalid={"captcha" in fieldErrors}
+                    describedBy={fieldErrors.captcha ? "captcha-error" : undefined}
+                    imageTabIndex={5}
+                    inputTabIndex={6}
+                  >
+                    {fieldErrors.captcha && (
+                      <p id="captcha-error" className="text-sm text-(--color-destructive)">
+                        {fieldErrors.captcha}
+                      </p>
+                    )}
+                  </Captcha>
+                )}
+
                 <div className="mt-2 flex flex-col gap-3">
-                  <Button type="submit" disabled={submitting} tabIndex={5} className="w-full">
-                    {submitting ? t("auth.sign_in_submitting") : t("sign_in")}
+                  <Button type="submit" disabled={submitting || countingDown} tabIndex={7} className="w-full">
+                    {submitLabel}
                   </Button>
                   <Button variant="link" size="inline" asChild className="self-center">
                     <a
                       href={subUrl("/user/sign-up")}
-                      tabIndex={submitting ? -1 : 7}
+                      tabIndex={submitting ? -1 : 9}
                       aria-disabled={submitting || undefined}
                       className={submitting ? "pointer-events-none opacity-50" : undefined}
                       onClick={(e) => {
