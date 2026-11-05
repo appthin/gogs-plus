@@ -5,7 +5,7 @@ icon: "paintbrush"
 ---
 
 <Danger>
-  Overriding full HTML page templates such as `custom/templates/home.tmpl` is deprecated starting with 0.15.0. The web interface is being rebuilt as a React application that renders pages on the client, so it no longer reads page templates from the `templates/` directory and your copies of them will stop taking effect once the migration is complete.
+  Overriding full HTML page templates such as `custom/templates/home.tmpl` is deprecated. The web interface is a React application that renders pages on the client, so it no longer reads page templates from the `templates/` directory and your copies of them will stop taking effect once the migration is complete.
 
   Content injection through `inject/head.tmpl` and `inject/footer.tmpl`, static file overrides under `custom/public/`, and email template overrides all remain fully supported.
 </Danger>

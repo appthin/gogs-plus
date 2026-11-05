@@ -452,7 +452,7 @@ sign_in_retry_after = Try again in %s
 | `web/src/pages/user/SignIn.tsx` | 验证码、429 倒计时、请求体增加 `captcha` |
 | `web/scripts/extract-locales.mjs` | `KEYS` 增加 SPA 新文案 |
 | `web/DESIGN.md` | 记录验证码组件这一共用模式 |
-| `CHANGELOG.md` | 在 `0.15.0+dev` 下增加 `### Added` 条目，只描述用户可见效果 |
+| `CHANGELOG.md` | 在 `0.14.5-plus` 下增加 `### Added` 条目，只描述用户可见效果 |
 
 关键接口草案：
 

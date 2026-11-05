@@ -42,6 +42,7 @@ Added in this fork:
 - **File-backed bans.** Bans live in a JSON file rather than memory, so they survive restarts, can be inspected and hand-edited, and take effect on the next request without a restart.
 - **Ban management page** at `/admin/login-bans`, showing the file location, current bans, the last account attempted from each banned IP, and buttons to unban or add bans.
 - **Portable Windows package** with vendored configuration and a launcher, built from this tree.
+- **Account listings require sign-in.** `/explore/users` and `/explore/organizations` redirect anonymous visitors to the sign-in page, so the directory cannot be harvested without an account.
 
 Details of the design, threat model, and trade-offs are in [docs/dev/login-protection.md](docs/dev/login-protection.md).
 
@@ -112,7 +113,25 @@ moon run web:lint
 moon run web:build
 ```
 
-Note that `moon run gogs:lint` runs `go generate` first through its dependency chain. On this tree the regenerated mocks differ from the committed ones, which trips an import-cycle typecheck error. If you hit it, run `go generate ./...`, restore the two generated mock files, then run `golangci-lint run` directly.
+Note that `moon run gogs:lint` runs `go generate` first through its dependency chain. On Windows this rewrites `internal/database/mocks_test.go` and `internal/route/lfs/mocks_test.go` with a self-import, because `go-mockgen` derives the output import path with `filepath.Join` and gets backslashes. The rewrite does not compile, so restore those two files and run `golangci-lint run` directly. Linux and macOS are unaffected.
+
+## Downloads
+
+Prebuilt archives are published on the [releases page](https://github.com/appthin/gogs-plus/releases). Each release carries one archive per platform, named after the release tag:
+
+```
+gogs_v0.14.5-plus_linux_amd64.tar.gz
+gogs_v0.14.5-plus_linux_amd64.zip
+gogs_v0.14.5-plus_darwin_arm64.zip
+gogs_v0.14.5-plus_windows_amd64.zip
+gogs_v0.14.5-plus_windows_amd64_mws.zip
+```
+
+The pattern is `gogs_<tag>_<os>_<arch>.<zip|tar.gz>`. Linux ships both a `tar.gz` and a `zip`, every other platform ships a `zip` only. The `_mws` suffix marks the Windows builds tagged `minwinsvc`, which link the minimum Windows service API and are the ones to use on older Windows releases.
+
+Every archive contains a top-level `gogs` directory holding the binary, `LICENSE`, `README.md`, and the `scripts` directory with init scripts and service definitions. Unpack it and run the binary; it needs a `custom/conf/app.ini` next to it or at the configured path. The macOS binaries are unsigned, so Gatekeeper refuses them on first launch until you allow the app in System Settings.
+
+Fork releases carry a `-plus` suffix on the version number so they cannot be confused with an upstream Gogs release. Upstream tags such as `v0.14.3` without the suffix are not from this fork.
 
 ## Documentation
 

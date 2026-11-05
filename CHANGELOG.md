@@ -2,19 +2,23 @@
 
 All notable changes to Gogs are documented in this file.
 
-## 0.15.0+dev (`main`)
+## 0.14.5-plus (`main`)
 
 ### Added
 
 - Sign-in protection. Sign-in now shows a captcha by default, and failed attempts can be limited per client IP or locked per account. Banned IP addresses and accounts are stored in `data/login_bans.json`, survive restarts, can be edited or deleted by hand without restarting, and can be reviewed and lifted from the new "Login bans" admin page. Editing the file takes effect on the next request.
+- Prebuilt archives for Linux, macOS, and Windows are published on the releases page for every `-plus` tag, built by GitHub Actions.
 
 ### Changed
 
+- The user and organization listings at `/explore/users` and `/explore/organizations` now require sign-in. Anonymous visitors are redirected to the sign-in page, and the two links are hidden from the explore sidebar until they sign in.
+- The sign-in, sign-up, password reset, activation and MFA pages now load directly instead of returning 404. Previously the repository route matched `/user/<page>` first and treated the page name as a repository.
 - Docker builds from `main` are now published only as `gogs/gogs:edge`, using the next-generation `Dockerfile.next`. The legacy `Dockerfile` no longer produces `main` builds. The `gogs/gogs:latest` and `gogs/gogs:next-latest` tags now always point to the highest published stable release, never to a back-patch on an older line. [#8278](https://github.com/gogs/gogs/pull/8278)
 - Self-registration is now disabled by default. New instances must set `[auth] DISABLE_REGISTRATION = false` to allow sign-ups. [#8350](https://github.com/gogs/gogs/pull/8350)
 
 ### Fixed
 
+- Pages below the site root rendered blank. The application shell referenced its scripts and stylesheet with relative paths, so a page such as `/user/sign-in` asked for `/user/assets/...` and got HTML instead of the script. Asset paths are now absolute.
 - _Security:_ On Windows hosts, an authenticated user with write access could write files into a repository's `.git` directory through a crafted tree path. [#8408](https://github.com/gogs/gogs/pull/8408) - [GHSA-85m5-cfw6-3cx8](https://github.com/gogs/gogs/security/advisories/GHSA-85m5-cfw6-3cx8)
 - _Security:_ Open redirect on the `/redirect` endpoint and post-action flows via a backslash in the redirect target. [#8391](https://github.com/gogs/gogs/pull/8391) - [GHSA-3g28-2vwg-gxq6](https://github.com/gogs/gogs/security/advisories/GHSA-3g28-2vwg-gxq6)
 - _Security:_ Argument injection through a crafted commit or branch reference on several repository API endpoints allowed an authenticated user with read access to leak internal server details to the error logs. [#8393](https://github.com/gogs/gogs/pull/8393) - [GHSA-mxrh-2rxr-6mqc](https://github.com/gogs/gogs/security/advisories/GHSA-mxrh-2rxr-6mqc)

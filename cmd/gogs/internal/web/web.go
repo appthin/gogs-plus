@@ -53,6 +53,17 @@ import (
 	"gogs.io/gogs/templates"
 )
 
+// appShellSegments are the "/user" sub-paths rendered by the React app. They
+// need explicit routes because the repository pattern "/:username/:reponame"
+// would otherwise capture them.
+var appShellSegments = []string{
+	"/sign-in",
+	"/sign-up",
+	"/reset-password",
+	"/activate",
+	"/mfa",
+}
+
 // Run starts the web server with the given configuration path and port override.
 func Run(configPath string, portOverride int) error {
 	err := initServices(configPath)
@@ -97,8 +108,10 @@ func Run(configPath string, portOverride int) error {
 				c.Redirect(conf.Server.Subpath + "/explore/repos")
 			})
 			m.Get("/repos", route.ExploreRepos)
-			m.Get("/users", route.ExploreUsers)
-			m.Get("/organizations", route.ExploreOrganizations)
+			// Listing accounts requires sign-in so it cannot be used to enumerate
+			// users and organizations anonymously.
+			m.Get("/users", reqSignIn, route.ExploreUsers)
+			m.Get("/organizations", reqSignIn, route.ExploreOrganizations)
 		}, ignSignIn)
 		m.Get("/^:type(issues|pulls)$", reqSignIn, user.Issues)
 
@@ -146,6 +159,15 @@ func Run(configPath string, portOverride int) error {
 		m.Group("/user", func() {
 			m.Any("/activate_email", user.ActivateEmail)
 			m.Get("/email2user", user.Email2User)
+
+			// The React app renders these entry pages, but the catch-all never
+			// reaches them: "/:username/:reponame" matches "/user/sign-in" first by
+			// treating "sign-in" as a repository name, and RepoAssignment rejects
+			// the result with 404. Registering them as static leaves under "/user"
+			// makes the router serve the app shell instead.
+			for _, segment := range appShellSegments {
+				m.Get(segment, serveAppShell)
+			}
 		})
 		// ***** END: User *****
 
@@ -755,6 +777,10 @@ func newRoutingHandler() (http.Handler, error) {
 	return f, nil
 }
 
+func serveAppShell(c *context.Context) {
+	c.ServeWeb()
+}
+
 func getRedirect(c flamego.Context) {
 	to := c.Request().URL.Query().Get("to")
 	if !urlx.IsSameSite(to) {
@@ -909,16 +935,20 @@ func renderIndex(index []byte, wc context.WebContext, inject injectContent) ([]b
 		"{{.WebContext}}", script + inject.head,
 		"</body>", inject.footer + "</body>",
 	}
-	if wc.SubURL != "" {
-		// Prefix entrypoint paths with the subpath for non-root mounts. Other
-		// bundled assets stay relative to the entrypoint that references them.
-		pairs = append(pairs,
-			`src="./assets/`, `src="`+wc.SubURL+`/assets/`,
-			`href="./assets/`, `href="`+wc.SubURL+`/assets/`,
-			`src="/src/`, `src="`+wc.SubURL+`/src/`,
-			`href="/img/`, `href="`+wc.SubURL+`/img/`,
-		)
-	}
+	// Prefix entrypoint paths with the subpath for non-root mounts. Other
+	// bundled assets stay relative to the entrypoint that references them.
+	//
+	// This runs even when the subpath is empty. Vite emits "./assets/..." for
+	// a relative base, which the browser resolves against the current
+	// directory, so a page served at "/user/sign-in" would look for
+	// "/user/assets/..." and receive the app shell instead of the script.
+	// Rewriting to an absolute path makes the shell work at any depth.
+	pairs = append(pairs,
+		`src="./assets/`, `src="`+wc.SubURL+`/assets/`,
+		`href="./assets/`, `href="`+wc.SubURL+`/assets/`,
+		`src="/src/`, `src="`+wc.SubURL+`/src/`,
+		`href="/img/`, `href="`+wc.SubURL+`/img/`,
+	)
 	return []byte(strings.NewReplacer(pairs...).Replace(string(index))), nil
 }
 
