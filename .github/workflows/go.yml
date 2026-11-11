@@ -9,6 +9,7 @@ on:
       - 'go.mod'
       - '.golangci.yml'
       - '.github/workflows/go.yml'
+      - '**/testdata/**'
   pull_request:
     paths:
       - '**.go'
