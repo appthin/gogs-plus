@@ -68,10 +68,11 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Run tests with coverage
+        shell: bash
         run: |
-          go test -shuffle=on -v -race -coverprofile=coverage -covermode=atomic -json ./... > test-report.json
           go install github.com/mfridman/tparse@latest
-          tparse -all -file=test-report.json
+          set -o pipefail
+          go test -shuffle=on -v -race -coverprofile=coverage -covermode=atomic -json ./... | tee test-report.json | tparse -all
       - name: Send email on failure
         uses: unknwon/send-email-on-failure@89339a1bc93f4ad1d30f3b7e4911fcba985c9adb # v1
         if: ${{ failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
