@@ -37,11 +37,13 @@ func ToWikiPageURL(name string) string {
 }
 
 // ToWikiPageName formats a URL back to corresponding wiki page name. It enforces
-// single-level hierarchy by replacing all "/" with spaces.
+// single-level hierarchy by replacing all "/" with spaces, and collapses any
+// dot-dot sequence so the result can never be a relative path reference.
 func ToWikiPageName(urlString string) string {
 	name, _ := url.QueryUnescape(urlString)
 	name = pathx.Clean(name)
-	return strings.ReplaceAll(name, "/", " ")
+	name = strings.ReplaceAll(name, "/", " ")
+	return strings.ReplaceAll(name, "..", ".")
 }
 
 // WikiCloneLink returns clone URLs of repository wiki.

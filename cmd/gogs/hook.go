@@ -239,7 +239,7 @@ func runHookPostReceive(_ context.Context, cmd *cli.Command) error {
 
 		resp, err := httplib.Get(reqURL).
 			SetTLSClientConfig(&tls.Config{
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: conf.Server.LocalRootURLSkipVerify,
 			}).Response()
 		if err == nil {
 			_ = resp.Body.Close()

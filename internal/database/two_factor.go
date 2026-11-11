@@ -21,6 +21,13 @@ type TwoFactor struct {
 	CreatedUnix int64
 }
 
+// twoFactorEncryptionKey derives the AES key used to encrypt 2FA secrets from
+// the site secret key. It is keyed with HMAC-SHA256 rather than a plain hash so
+// the site secret is not exposed as raw hash input.
+func twoFactorEncryptionKey() []byte {
+	return cryptox.HMACSHA256([]byte(conf.Security.SecretKey), []byte("gogs-plus 2FA secret encryption key"))
+}
+
 // ValidateTOTP returns true if given passcode is valid for two-factor authentication token.
 // It also returns possible validation error.
 func (t *TwoFactor) ValidateTOTP(passcode string) (bool, error) {
@@ -28,7 +35,7 @@ func (t *TwoFactor) ValidateTOTP(passcode string) (bool, error) {
 	if err != nil {
 		return false, errors.Newf("DecodeString: %v", err)
 	}
-	decryptSecret, err := cryptox.AESGCMDecrypt(cryptox.MD5Bytes(conf.Security.SecretKey), secret)
+	decryptSecret, err := cryptox.AESGCMDecrypt(twoFactorEncryptionKey(), secret)
 	if err != nil {
 		return false, errors.Newf("AESGCMDecrypt: %v", err)
 	}

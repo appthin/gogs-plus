@@ -56,7 +56,7 @@ func authenticate(store Store) macaron.Handler {
 	}
 
 	return func(c *macaron.Context) {
-		username, password := authx.DecodeBasic(c.Req.Header)
+		username, credential := authx.DecodeBasic(c.Req.Header)
 		if username == "" {
 			askCredentials(c.Resp)
 			return
@@ -74,7 +74,7 @@ func authenticate(store Store) macaron.Handler {
 			return
 		}
 
-		user, err := store.AuthenticateUser(c.Req.Context(), username, password, -1)
+		user, err := store.AuthenticateUser(c.Req.Context(), username, credential, -1)
 		if err != nil && !auth.IsErrBadCredentials(err) {
 			internalServerError(c.Resp)
 			log.Error("Failed to authenticate user [name: %s]: %v", username, err)
@@ -90,8 +90,9 @@ func authenticate(store Store) macaron.Handler {
 			return
 		}
 
-		// If username and password combination failed, try again using either username
-		// or password as the token.
+		// If username and credential combination failed, try again using either
+		// the username or the credential as the access token (LFS clients may
+		// put the token in either field of the Basic auth header).
 		if auth.IsErrBadCredentials(err) {
 			user, err = context.AuthenticateByToken(store, c.Req.Context(), username)
 			if err != nil && !database.IsErrAccessTokenNotExist(err) {
@@ -99,8 +100,8 @@ func authenticate(store Store) macaron.Handler {
 				log.Error("Failed to authenticate by access token via username: %v", err)
 				return
 			} else if database.IsErrAccessTokenNotExist(err) {
-				// Try again using the password field as the token.
-				user, err = context.AuthenticateByToken(store, c.Req.Context(), password)
+				// Try again using the credential field as the token.
+				user, err = context.AuthenticateByToken(store, c.Req.Context(), credential)
 				if err != nil {
 					if database.IsErrAccessTokenNotExist(err) {
 						if ban, blocked, err := lim.RecordFailure(c.Req.Context(), ip, username); err != nil {
@@ -115,7 +116,7 @@ func authenticate(store Store) macaron.Handler {
 						askCredentials(c.Resp)
 					} else {
 						c.Status(http.StatusInternalServerError)
-						log.Error("Failed to authenticate by access token via password: %v", err)
+						log.Error("Failed to authenticate by access token via credential: %v", err)
 					}
 					return
 				}

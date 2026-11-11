@@ -39,6 +39,13 @@ func parseCacheOptions(confOpts conf.CacheOptions) (cache.Options, error) {
 	return opts, nil
 }
 
+// legacyInsecureTLSConfig matches the go-macaron/session/redis contract that
+// gogs-plus still honors for backward compatibility: any non-empty `tls=` value
+// in the cache HOST enables TLS with certificate verification skipped.
+func legacyInsecureTLSConfig() *tls.Config {
+	return &tls.Config{InsecureSkipVerify: true}
+}
+
 func parseRedisConfig(host string) (redis.Config, error) {
 	cfg, err := ini.Load([]byte(strings.ReplaceAll(host, ",", "\n")))
 	if err != nil {
@@ -75,9 +82,7 @@ func parseRedisConfig(host string) (redis.Config, error) {
 		case "prefix":
 			config.KeyPrefix = v
 		case "tls":
-			// Matches go-macaron/session/redis: any non-empty `tls=` value enables
-			// TLS with InsecureSkipVerify.
-			config.Options.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+			config.Options.TLSConfig = legacyInsecureTLSConfig()
 		case "hset_name":
 			// Macaron stored values in a single Redis hash named by this key,
 			// whereas Flamego stores per-key with KeyPrefix, so this knob has no equivalent.

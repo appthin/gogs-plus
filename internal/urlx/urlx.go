@@ -8,5 +8,7 @@ func IsSameSite(rawURL string) bool {
 		strings.Contains(rawURL, "%5C") || strings.Contains(rawURL, "%5c") {
 		return false
 	}
-	return strings.HasPrefix(rawURL, "/") && !strings.Contains(rawURL, "//")
+	return strings.HasPrefix(rawURL, "/") &&
+		!strings.HasPrefix(rawURL, "//") &&
+		!strings.HasPrefix(rawURL, "/\\")
 }

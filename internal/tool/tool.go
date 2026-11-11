@@ -1,7 +1,6 @@
 package tool
 
 import (
-	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -91,7 +90,8 @@ func VerifyTimeLimitCode(data string, minutes int, code string) bool {
 const TimeLimitCodeLength = 12 + 6 + 40
 
 // CreateTimeLimitCode generates a time limit code based on given input data.
-// Format: 12 length date time string + 6 minutes string + 40 sha1 encoded string
+// Format: 12 length date time string + 6 minutes string + 40 hexadecimal
+// characters of HMAC-SHA256 (truncated to 160 bits to keep the code length).
 func CreateTimeLimitCode(data string, minutes int, startInf any) string {
 	format := "200601021504"
 
@@ -112,10 +112,13 @@ func CreateTimeLimitCode(data string, minutes int, startInf any) string {
 	end = start.Add(time.Minute * time.Duration(minutes))
 	endStr = end.Format(format)
 
-	// create sha1 encode string
-	sh := sha1.New()
-	_, _ = sh.Write([]byte(data + conf.Security.SecretKey + startStr + endStr + strconv.Itoa(minutes)))
-	encoded := hex.EncodeToString(sh.Sum(nil))
+	// Keyed MAC keeps the site secret from being used as raw hash input, which
+	// also makes the code safe against length-extension style tampering.
+	mac := cryptox.HMACSHA256(
+		[]byte(conf.Security.SecretKey),
+		[]byte(data+startStr+endStr+strconv.Itoa(minutes)),
+	)
+	encoded := hex.EncodeToString(mac)[:40]
 
 	code := fmt.Sprintf("%s%06d%s", startStr, minutes, encoded)
 	return code

@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path"
+	"regexp"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -40,8 +41,15 @@ func (a *Attachment) AfterSet(colName string, _ xorm.Cell) {
 	}
 }
 
+// attachmentUUIDPattern matches a canonical UUID string, which is the only
+// allowed shape of the identifier used to locate an attachment on disk.
+var attachmentUUIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
 // AttachmentLocalPath returns where attachment is stored in local file system based on given UUID.
 func AttachmentLocalPath(uuid string) string {
+	if !attachmentUUIDPattern.MatchString(uuid) {
+		return ""
+	}
 	return path.Join(conf.Attachment.Path, uuid[0:1], uuid[1:2], uuid)
 }
 

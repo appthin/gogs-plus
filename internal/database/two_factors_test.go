@@ -91,7 +91,7 @@ func TestTwoFactors(t *testing.T) {
 
 func twoFactorsCreate(t *testing.T, ctx context.Context, s *TwoFactorsStore) {
 	// Create a 2FA token
-	err := s.Create(ctx, 1, "secure-key", "secure-secret")
+	err := s.Create(ctx, 1, "secure-secret")
 	require.NoError(t, err)
 
 	// Get it back and check the Created field
@@ -108,7 +108,7 @@ func twoFactorsCreate(t *testing.T, ctx context.Context, s *TwoFactorsStore) {
 
 func twoFactorsGetByUserID(t *testing.T, ctx context.Context, s *TwoFactorsStore) {
 	// Create a 2FA token for user 1
-	err := s.Create(ctx, 1, "secure-key", "secure-secret")
+	err := s.Create(ctx, 1, "secure-secret")
 	require.NoError(t, err)
 
 	// We should be able to get it back
@@ -123,7 +123,7 @@ func twoFactorsGetByUserID(t *testing.T, ctx context.Context, s *TwoFactorsStore
 
 func twoFactorsIsEnabled(t *testing.T, ctx context.Context, s *TwoFactorsStore) {
 	// Create a 2FA token for user 1
-	err := s.Create(ctx, 1, "secure-key", "secure-secret")
+	err := s.Create(ctx, 1, "secure-secret")
 	require.NoError(t, err)
 
 	assert.True(t, s.IsEnabled(ctx, 1))
@@ -132,9 +132,9 @@ func twoFactorsIsEnabled(t *testing.T, ctx context.Context, s *TwoFactorsStore) 
 
 func twoFactorsUseRecoveryCode(t *testing.T, ctx context.Context, s *TwoFactorsStore) {
 	// Create 2FA tokens for two users
-	err := s.Create(ctx, 1, "secure-key", "secure-secret")
+	err := s.Create(ctx, 1, "secure-secret")
 	require.NoError(t, err)
-	err = s.Create(ctx, 2, "secure-key", "secure-secret")
+	err = s.Create(ctx, 2, "secure-secret")
 	require.NoError(t, err)
 
 	// Get recovery codes for both users

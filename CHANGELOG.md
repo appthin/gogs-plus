@@ -15,6 +15,9 @@ All notable changes to Gogs are documented in this file.
 - The sign-in, sign-up, password reset, activation and MFA pages now load directly instead of returning 404. Previously the repository route matched `/user/<page>` first and treated the page name as a repository.
 - Docker builds from `main` are now published only as `gogs/gogs:edge`, using the next-generation `Dockerfile.next`. The legacy `Dockerfile` no longer produces `main` builds. The `gogs/gogs:latest` and `gogs/gogs:next-latest` tags now always point to the highest published stable release, never to a back-patch on an older line. [#8278](https://github.com/gogs/gogs/pull/8278)
 - Self-registration is now disabled by default. New instances must set `[auth] DISABLE_REGISTRATION = false` to allow sign-ups. [#8350](https://github.com/gogs/gogs/pull/8350)
+- _Security hardening:_ Two-factor secrets are now encrypted with a key derived via HMAC-SHA256 instead of a plain MD5 hash of the site secret key. Existing two-factor enrollments stop working after upgrade and must be re-enabled by each user.
+- _Security hardening:_ Time-limited codes (account activation and password reset links) are now signed with HMAC-SHA256 instead of a plain SHA-1 hash. Links issued before the upgrade are no longer valid; users need to request a new one.
+- _Security hardening:_ Workers now verify TLS certificates when accessing the `[server] LOCAL_ROOT_URL`. Deployments using HTTPS with a self-signed or otherwise untrusted certificate must set the new `[server] LOCAL_ROOT_URL_SKIP_VERIFY = true`.
 
 ### Fixed
 
@@ -24,6 +27,9 @@ All notable changes to Gogs are documented in this file.
 - _Security:_ Argument injection through a crafted commit or branch reference on several repository API endpoints allowed an authenticated user with read access to leak internal server details to the error logs. [#8393](https://github.com/gogs/gogs/pull/8393) - [GHSA-mxrh-2rxr-6mqc](https://github.com/gogs/gogs/security/advisories/GHSA-mxrh-2rxr-6mqc)
 - _Security:_ Argument injection through a crafted branch name when creating a pull request allowed an authenticated user with write access to write files to arbitrary paths on the server. [#8390](https://github.com/gogs/gogs/pull/8390) - [GHSA-2grc-qr7q-6m36](https://github.com/gogs/gogs/security/advisories/GHSA-2grc-qr7q-6m36)
 - _Security:_ The "remember me" auto-login cookie was derived from database columns, so an attacker with a database dump could forge a valid cookie for any user. The auto-login cookie path has been removed entirely. Persistence is now provided by the server-issued session cookie. [#8289](https://github.com/gogs/gogs/pull/8289) - [GHSA-4pph-25p3-pw73](https://github.com/gogs/gogs/security/advisories/GHSA-4pph-25p3-pw73)
+- _Security:_ Attachment download accepted non-UUID path fragments in the attachment identifier, letting a crafted request walk out of the attachment storage directory. Attachment identifiers are now validated as canonical UUIDs.
+- _Security:_ Git smart HTTP endpoints accepted repository paths containing dot-dot segments, letting a crafted URL reference repositories outside the repository root. Such paths are now rejected.
+- _Security:_ Wiki page deletion resolved the page title to a file path that could escape the wiki working tree with a crafted page name containing dot-dot sequences. Page names now collapse such sequences before any file operation.
 
 ### Removed
 

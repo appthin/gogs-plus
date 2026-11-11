@@ -139,7 +139,7 @@ func HTTPContexter(store Store) macaron.Handler {
 			askCredentials(c, http.StatusUnauthorized, "")
 			return
 		}
-		authUsername, authPassword, err := tool.BasicAuthDecode(auths[1])
+		authUsername, authCredential, err := tool.BasicAuthDecode(auths[1])
 		if err != nil {
 			askCredentials(c, http.StatusUnauthorized, "")
 			return
@@ -155,7 +155,7 @@ func HTTPContexter(store Store) macaron.Handler {
 			return
 		}
 
-		authUser, err := store.AuthenticateUser(c.Req.Context(), authUsername, authPassword, -1)
+		authUser, err := store.AuthenticateUser(c.Req.Context(), authUsername, authCredential, -1)
 		if err != nil && !auth.IsErrBadCredentials(err) {
 			c.Status(http.StatusInternalServerError)
 			log.Error("Failed to authenticate user [name: %s]: %v", authUsername, err)
@@ -166,8 +166,9 @@ func HTTPContexter(store Store) macaron.Handler {
 			lim.ResetAccount(c.Req.Context(), authUsername)
 		}
 
-		// If username and password combination failed, try again using either username
-		// or password as the token.
+		// If username and credential combination failed, try again using either
+		// the username or the credential as the access token (Git clients may
+		// put the token in either field of the Basic auth header).
 		if authUser == nil {
 			authUser, err = context.AuthenticateByToken(store, c.Req.Context(), authUsername)
 			if err != nil && !database.IsErrAccessTokenNotExist(err) {
@@ -175,8 +176,8 @@ func HTTPContexter(store Store) macaron.Handler {
 				log.Error("Failed to authenticate by access token via username: %v", err)
 				return
 			} else if database.IsErrAccessTokenNotExist(err) {
-				// Try again using the password field as the token.
-				authUser, err = context.AuthenticateByToken(store, c.Req.Context(), authPassword)
+				// Try again using the credential field as the token.
+				authUser, err = context.AuthenticateByToken(store, c.Req.Context(), authCredential)
 				if err != nil {
 					if database.IsErrAccessTokenNotExist(err) {
 						if ban, blocked, err := lim.RecordFailure(c.Req.Context(), ip, authUsername); err != nil {
@@ -189,7 +190,7 @@ func HTTPContexter(store Store) macaron.Handler {
 						askCredentials(c, http.StatusUnauthorized, "")
 					} else {
 						c.Status(http.StatusInternalServerError)
-						log.Error("Failed to authenticate by access token via password: %v", err)
+						log.Error("Failed to authenticate by access token via credential: %v", err)
 					}
 					return
 				}
@@ -362,16 +363,26 @@ func packetWrite(str string) []byte {
 func getInfoRefs(h serviceHandler) {
 	h.setHeaderNoCache()
 	service := getServiceType(h.r)
-	if service != "upload-pack" && service != "receive-pack" {
+
+	// 🚨 SECURITY: Only allow a fixed set of service verbs to reach the command
+	// line, the raw service value from the query string must never be used.
+	var verb string
+	switch service {
+	case "upload-pack":
+		verb = "upload-pack"
+	case "receive-pack":
+		verb = "receive-pack"
+	}
+	if verb == "" {
 		updateServerInfo(h.dir)
 		h.sendFile("text/plain; charset=utf-8")
 		return
 	}
 
-	refs := gitCommand(h.dir, service, "--stateless-rpc", "--advertise-refs", ".")
-	h.w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-advertisement", service))
+	refs := gitCommand(h.dir, verb, "--stateless-rpc", "--advertise-refs", ".")
+	h.w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-advertisement", verb))
 	h.w.WriteHeader(http.StatusOK)
-	_, _ = h.w.Write(packetWrite("# service=git-" + service + "\n"))
+	_, _ = h.w.Write(packetWrite("# service=git-" + verb + "\n"))
 	_, _ = h.w.Write([]byte("0000"))
 	_, _ = h.w.Write(refs)
 }
@@ -420,6 +431,12 @@ var routes = []struct {
 }
 
 func getGitRepoPath(dir string) (string, error) {
+	// 🚨 SECURITY: The directory comes from the request URL, reject any path
+	// that tries to escape the repository root via dot-dot segments.
+	if strings.Contains(dir, "..") {
+		return "", os.ErrInvalid
+	}
+
 	if !strings.HasSuffix(dir, ".git") {
 		dir += ".git"
 	}

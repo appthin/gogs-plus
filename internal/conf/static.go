@@ -282,6 +282,11 @@ type ServerOpts struct {
 	UnixSocketPermission string
 	LocalRootURL         string `ini:"LOCAL_ROOT_URL"`
 
+	// Whether to skip TLS certificate verification when workers access the
+	// LOCAL_ROOT_URL. Only needed when LOCAL_ROOT_URL uses HTTPS with a
+	// self-signed or otherwise untrusted certificate.
+	LocalRootURLSkipVerify bool `ini:"LOCAL_ROOT_URL_SKIP_VERIFY"`
+
 	OfflineMode      bool
 	DisableRouterLog bool
 	EnableGzip       bool

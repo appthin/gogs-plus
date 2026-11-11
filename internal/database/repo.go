@@ -2241,7 +2241,15 @@ func CheckRepoStats() {
 				log.Error("Select count of forks[%d]: %v", repo.ID, err)
 				continue
 			}
-			repo.NumForks = int(parseCountResult(rawResult))
+			count := parseCountResult(rawResult)
+			// Prevent int64 to int truncation on 32-bit platforms. The bound
+			// is deliberately conservative, the fork count of any real instance
+			// is far below it.
+			if count <= 65535 {
+				repo.NumForks = int(count)
+			} else {
+				repo.NumForks = 65535
+			}
 
 			if err = UpdateRepository(repo, false); err != nil {
 				log.Error("UpdateRepository[%d]: %v", id, err)
