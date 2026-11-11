@@ -34,8 +34,11 @@ jobs:
           - {goos: linux, goarch: amd64, runner: ubuntu-latest}
           - {goos: linux, goarch: arm64, runner: ubuntu-latest}
           - {goos: linux, goarch: "386", runner: ubuntu-latest}
-          - {goos: darwin, goarch: amd64, runner: macos-latest}
-          - {goos: darwin, goarch: arm64, runner: macos-latest}
+          # darwin binaries are cross-compiled on ubuntu runners: the builds are
+          # CGO-free, and macOS hosted runners keep getting cancelled while
+          # waiting for capacity.
+          - {goos: darwin, goarch: amd64, runner: ubuntu-latest}
+          - {goos: darwin, goarch: arm64, runner: ubuntu-latest}
           - {goos: windows, goarch: amd64, runner: ubuntu-latest}
           - {goos: windows, goarch: arm64, runner: ubuntu-latest}
           - {goos: windows, goarch: "386", runner: ubuntu-latest}
