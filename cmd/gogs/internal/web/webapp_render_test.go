@@ -18,9 +18,8 @@ func TestRenderIndex_injection(t *testing.T) {
 	require.NoError(t, os.MkdirAll(injectDir, 0700))
 	require.NoError(t, os.WriteFile(filepath.Join(injectDir, "head.tmpl"), []byte(`<meta name="head-marker">`), 0600))
 	require.NoError(t, os.WriteFile(filepath.Join(injectDir, "footer.tmpl"), []byte(`<script>footerMarker()</script>`), 0600))
-	t.Setenv("GOGS_CUSTOM", customDir)
 
-	inject, err := readInjectContent()
+	inject, err := readInjectContent(customDir)
 	require.NoError(t, err)
 
 	shell := `<html><head>{{.WebContext}}</head><body><div id="root"></div></body></html>`
@@ -39,9 +38,7 @@ func TestRenderIndex_injection(t *testing.T) {
 // browser resolves against the current directory, so the shell served at
 // "/user/sign-in" would request "/user/assets/..." and never load the app.
 func TestRenderIndex_absoluteAssets(t *testing.T) {
-	t.Setenv("GOGS_CUSTOM", t.TempDir())
-
-	inject, err := readInjectContent()
+	inject, err := readInjectContent(t.TempDir())
 	require.NoError(t, err)
 
 	shell := `<html><head>{{.WebContext}}` +

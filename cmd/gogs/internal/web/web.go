@@ -896,14 +896,16 @@ type injectContent struct {
 }
 
 // readInjectContent reads the head and footer injection templates from the
-// custom directory, falling back to the empty embedded defaults.
-func readInjectContent() (injectContent, error) {
-	customDir := filepath.Join(conf.CustomDir(), "templates")
-	head, err := templates.ReadInjectFile(customDir, "head.tmpl")
+// given custom directory, falling back to the empty embedded defaults. Callers
+// pass the directory explicitly instead of reading conf.CustomDir() inside, so
+// the result does not depend on the process-wide memoized configuration.
+func readInjectContent(customDir string) (injectContent, error) {
+	templatesDir := filepath.Join(customDir, "templates")
+	head, err := templates.ReadInjectFile(templatesDir, "head.tmpl")
 	if err != nil {
 		return injectContent{}, errors.Wrap(err, "read head injection")
 	}
-	footer, err := templates.ReadInjectFile(customDir, "footer.tmpl")
+	footer, err := templates.ReadInjectFile(templatesDir, "footer.tmpl")
 	if err != nil {
 		return injectContent{}, errors.Wrap(err, "read footer injection")
 	}
