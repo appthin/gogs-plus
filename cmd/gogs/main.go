@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	conf.App.Version = "0.14.5-plus"
+	conf.App.Version = "0.14.6-plus"
 }
 
 var webCommand = cli.Command{

@@ -48,6 +48,21 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Verify tag naming and version
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          case "$VERSION" in
+            v*-plus) ;;
+            *)
+              echo "::error::Release tags must carry the -plus suffix, e.g., v0.14.6-plus (got $VERSION)"
+              exit 1
+              ;;
+          esac
+          if ! grep -qF "\"${VERSION#v}\"" cmd/gogs/main.go; then
+            echo "::error::cmd/gogs/main.go does not set conf.App.Version to ${VERSION#v}, the tag and the embedded version must match"
+            exit 1
+          fi
       - name: Set up Go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
