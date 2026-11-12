@@ -53,7 +53,7 @@ All notable changes to Gogs are documented in this file.
 - CSRF protection and the `[session] CSRF_COOKIE_NAME` configuration option. [#8300](https://github.com/gogs/gogs/pull/8300)
 - Support for DSA public keys. The `DSA` entry under `[ssh.minimum_key_sizes]` is no longer recognized. [#8313](https://github.com/gogs/gogs/pull/8313)
 
-## 0.14.7-plus (`main`)
+## 0.14.7-plus
 
 ### Added
 

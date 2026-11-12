@@ -120,11 +120,11 @@ Note that `moon run gogs:lint` runs `go generate` first through its dependency c
 Prebuilt archives are published on the [releases page](https://github.com/appthin/gogs-plus/releases). Each release carries one archive per platform, named after the release tag:
 
 ```
-gogs_v0.14.6-plus_linux_amd64.tar.gz
-gogs_v0.14.6-plus_linux_amd64.zip
-gogs_v0.14.6-plus_darwin_arm64.zip
-gogs_v0.14.6-plus_windows_amd64.zip
-gogs_v0.14.6-plus_windows_amd64_mws.zip
+gogs_v0.14.7-plus_linux_amd64.tar.gz
+gogs_v0.14.7-plus_linux_amd64.zip
+gogs_v0.14.7-plus_darwin_arm64.zip
+gogs_v0.14.7-plus_windows_amd64.zip
+gogs_v0.14.7-plus_windows_amd64_mws.zip
 ```
 
 The pattern is `gogs_<tag>_<os>_<arch>.<zip|tar.gz>`. Linux ships both a `tar.gz` and a `zip`, every other platform ships a `zip` only. The `_mws` suffix marks the Windows builds tagged `minwinsvc`, which link the minimum Windows service API and are the ones to use on older Windows releases.
