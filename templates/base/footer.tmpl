@@ -8,6 +8,7 @@
 		<div class="ui container">
 			<div class="ui left">
 				© {{Year}} {{AppName}}
+				{{if .IsLogged}} · Gogs Plus {{AppVer}}{{end}}
 			</div>
 			<div class="ui right links">
 				{{if ShowFooterTemplateLoadTime}}

@@ -1,10 +1,13 @@
+import { useUserInfo } from "@/lib/use-user-info";
 import { subUrl } from "@/lib/url";
 
 export function Footer() {
+  const user = useUserInfo();
   return (
     <footer className="mt-8 border-t border-(--color-border)">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-5 gap-y-2 px-4 py-3 text-xs text-(--color-muted-foreground) sm:px-6">
         <span>© {new Date().getFullYear()} Gogs®</span>
+        {user && <span>Gogs Plus {user.version}</span>}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
           <a
             href="https://github.com/gogs/gogs"

@@ -6,6 +6,7 @@ export interface UserInfo {
   avatarURL: string;
   isAdmin: boolean;
   canCreateOrganization: boolean;
+  version: string;
 }
 
 export async function fetchUserInfo(): Promise<UserInfo | null> {

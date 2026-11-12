@@ -470,6 +470,7 @@ type userInfo struct {
 	AvatarURL             string `json:"avatarURL"`
 	IsAdmin               bool   `json:"isAdmin"`
 	CanCreateOrganization bool   `json:"canCreateOrganization"`
+	Version               string `json:"version"`
 }
 
 func getUserInfo(user *database.User) (statusCode int, resp *userInfo, err error) {
@@ -482,6 +483,7 @@ func getUserInfo(user *database.User) (statusCode int, resp *userInfo, err error
 			AvatarURL:             user.AvatarURL(),
 			IsAdmin:               user.IsAdmin,
 			CanCreateOrganization: user.CanCreateOrganization(),
+			Version:               conf.App.Version,
 		},
 		nil
 }

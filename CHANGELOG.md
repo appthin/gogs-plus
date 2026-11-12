@@ -55,6 +55,10 @@ All notable changes to Gogs are documented in this file.
 
 ## 0.14.7-plus (`main`)
 
+### Added
+
+- Signed-in users now see the version number in the page footer.
+
 ### Changed
 
 - Lowering `[auth] ACTIVATE_CODE_LIVES` or `[auth] RESET_PASSWORD_CODE_LIVES` now also shortens the lifetime of activation, email confirmation, and password reset links already sent. [#8478](https://github.com/gogs/gogs/pull/8478)
