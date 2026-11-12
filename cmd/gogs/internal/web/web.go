@@ -936,21 +936,20 @@ func renderIndex(index []byte, wc context.WebContext, inject injectContent) ([]b
 		// body tag to land just before </body>.
 		"{{.WebContext}}", script + inject.head,
 		"</body>", inject.footer + "</body>",
+		// Make entrypoint paths absolute, so pages nested below the root (e.g.,
+		// "/user/sign-in") load them from the assets directory rather than one
+		// relative to the page. Other bundled assets stay relative to the
+		// entrypoint that references them.
+		`src="./assets/`, `src="` + wc.SubURL + `/assets/`,
+		`href="./assets/`, `href="` + wc.SubURL + `/assets/`,
 	}
-	// Prefix entrypoint paths with the subpath for non-root mounts. Other
-	// bundled assets stay relative to the entrypoint that references them.
-	//
-	// This runs even when the subpath is empty. Vite emits "./assets/..." for
-	// a relative base, which the browser resolves against the current
-	// directory, so a page served at "/user/sign-in" would look for
-	// "/user/assets/..." and receive the app shell instead of the script.
-	// Rewriting to an absolute path makes the shell work at any depth.
-	pairs = append(pairs,
-		`src="./assets/`, `src="`+wc.SubURL+`/assets/`,
-		`href="./assets/`, `href="`+wc.SubURL+`/assets/`,
-		`src="/src/`, `src="`+wc.SubURL+`/src/`,
-		`href="/img/`, `href="`+wc.SubURL+`/img/`,
-	)
+	if wc.SubURL != "" {
+		// Prefix Vite's absolute root paths with the subpath for non-root mounts.
+		pairs = append(pairs,
+			`src="/src/`, `src="`+wc.SubURL+`/src/`,
+			`href="/img/`, `href="`+wc.SubURL+`/img/`,
+		)
+	}
 	return []byte(strings.NewReplacer(pairs...).Replace(string(index))), nil
 }
 

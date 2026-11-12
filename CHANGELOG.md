@@ -53,6 +53,26 @@ All notable changes to Gogs are documented in this file.
 - CSRF protection and the `[session] CSRF_COOKIE_NAME` configuration option. [#8300](https://github.com/gogs/gogs/pull/8300)
 - Support for DSA public keys. The `DSA` entry under `[ssh.minimum_key_sizes]` is no longer recognized. [#8313](https://github.com/gogs/gogs/pull/8313)
 
+## 0.14.7-plus (`main`)
+
+### Changed
+
+- Lowering `[auth] ACTIVATE_CODE_LIVES` or `[auth] RESET_PASSWORD_CODE_LIVES` now also shortens the lifetime of activation, email confirmation, and password reset links already sent. [#8478](https://github.com/gogs/gogs/pull/8478)
+- Diff views are now highlighted with the Highlights engine, and browsers that cannot run WebAssembly (e.g., a restrictive CSP) fall back to Shiki's JavaScript tokenizer. [#8492](https://github.com/gogs/gogs/pull/8492)
+
+### Fixed
+
+- _Security:_ On Windows hosts, a user creating a repository with initial files or initializing its labels could read files on the server, including the configuration file. [#8488](https://github.com/gogs/gogs/pull/8488) - [GHSA-fv2v-vwmj-j74p](https://github.com/gogs/gogs/security/advisories/GHSA-fv2v-vwmj-j74p)
+- _Security:_ Referencing an issue in a commit message added a comment to it even when the pusher could not access its repository, letting anyone post into issues of private repositories. [#8486](https://github.com/gogs/gogs/pull/8486) - [GHSA-53f6-cgcf-gp6v](https://github.com/gogs/gogs/security/advisories/GHSA-53f6-cgcf-gp6v)
+- _Security:_ Viewing an Org-mode file could show the contents of arbitrary files on the server, including the configuration file. [#8484](https://github.com/gogs/gogs/pull/8484) - [GHSA-hr26-3fq5-9365](https://github.com/gogs/gogs/security/advisories/GHSA-hr26-3fq5-9365)
+- _Security:_ On Windows hosts, an authenticated user with write access could still write files into a repository's `.git` directory through other names for it, leading to code execution on the server. [#8483](https://github.com/gogs/gogs/pull/8483) - [GHSA-hc35-pcqw-5xjq](https://github.com/gogs/gogs/security/advisories/GHSA-hc35-pcqw-5xjq)
+- _Security:_ A username containing HTML, which could come from an external login source such as LDAP, was rendered as markup on issue and pull request pages and in the dashboard issue and pull request lists. [#8482](https://github.com/gogs/gogs/pull/8482) - [GHSA-vhf5-f34f-vhq9](https://github.com/gogs/gogs/security/advisories/GHSA-vhf5-f34f-vhq9)
+- _Security:_ Webhooks, repository migrations, and mirrors could reach services on the Gogs host through the IPv6 address `[::]`, bypassing the local network restriction. [#8481](https://github.com/gogs/gogs/pull/8481) - [GHSA-799r-mx22-r63q](https://github.com/gogs/gogs/security/advisories/GHSA-799r-mx22-r63q)
+- _Security:_ Any signed-in user who knew the UUID of an attachment in another repository, including a private one, could move it to their own issue, comment, or release to download it, in some cases removing it from the original. [#8480](https://github.com/gogs/gogs/pull/8480) - [GHSA-p92p-7887-3g33](https://github.com/gogs/gogs/security/advisories/GHSA-p92p-7887-3g33)
+- _Security:_ A password reset link could be used to sign in as the user without their password or two-factor authentication. Activation, email confirmation, and password reset links sent before upgrading no longer work. [#8472](https://github.com/gogs/gogs/pull/8472) - [GHSA-pmfh-wh5m-gmjm](https://github.com/gogs/gogs/security/advisories/GHSA-pmfh-wh5m-gmjm)
+- _Security:_ Accounts with login prohibited or not activated kept repository access through access tokens, passwords, and SSH keys. [#8439](https://github.com/gogs/gogs/pull/8439) - [GHSA-f9cv-gfvg-3464](https://github.com/gogs/gogs/security/advisories/GHSA-f9cv-gfvg-3464)
+- `gogs restore` no longer replaces the database before failing when an earlier restore left its `.bak` directories behind. [#8453](https://github.com/gogs/gogs/pull/8453)
+
 ## 0.14.3
 
 ### Fixed

@@ -33,37 +33,29 @@ func TestRenderIndex_injection(t *testing.T) {
 	assert.Less(t, strings.Index(out, `<meta name="head-marker">`), strings.Index(out, `</head>`))
 }
 
-// TestRenderIndex_absoluteAssets checks that asset references are rewritten to
-// absolute paths even at the root mount. Vite emits relative paths, which a
-// browser resolves against the current directory, so the shell served at
-// "/user/sign-in" would request "/user/assets/..." and never load the app.
-func TestRenderIndex_absoluteAssets(t *testing.T) {
-	inject, err := readInjectContent(t.TempDir())
-	require.NoError(t, err)
-
-	shell := `<html><head>{{.WebContext}}` +
-		`<script type="module" src="./assets/index.js"></script>` +
-		`<link rel="stylesheet" href="./assets/index.css">` +
-		`<link rel="shortcut icon" href="/img/favicon.png">` +
-		`</head><body></body></html>`
-
-	t.Run("root mount", func(t *testing.T) {
-		got, err := renderIndex([]byte(shell), context.WebContext{Lang: "en-US"}, inject)
-		require.NoError(t, err)
-
-		out := string(got)
-		assert.NotContains(t, out, `./assets/`, "relative asset paths break pages below the root")
-		assert.Contains(t, out, `src="/assets/index.js"`)
-		assert.Contains(t, out, `href="/assets/index.css"`)
-	})
-
-	t.Run("subpath mount", func(t *testing.T) {
-		got, err := renderIndex([]byte(shell), context.WebContext{Lang: "en-US", SubURL: "/gogs"}, inject)
-		require.NoError(t, err)
-
-		out := string(got)
-		assert.NotContains(t, out, `./assets/`)
-		assert.Contains(t, out, `src="/gogs/assets/index.js"`)
-		assert.Contains(t, out, `href="/gogs/assets/index.css"`)
-	})
+func TestRenderIndex_entrypointPaths(t *testing.T) {
+	shell := `<head>{{.WebContext}}<script type="module" src="./assets/index.js"></script>` +
+		`<link rel="stylesheet" href="./assets/index.css"></head>`
+	tests := []struct {
+		name   string
+		subURL string
+		want   string
+	}{
+		{
+			name: "root",
+			want: `<script type="module" src="/assets/index.js"></script><link rel="stylesheet" href="/assets/index.css">`,
+		},
+		{
+			name:   "subpath",
+			subURL: "/gogs",
+			want:   `<script type="module" src="/gogs/assets/index.js"></script><link rel="stylesheet" href="/gogs/assets/index.css">`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := renderIndex([]byte(shell), context.WebContext{Lang: "en-US", SubURL: test.subURL}, injectContent{})
+			require.NoError(t, err)
+			assert.Contains(t, string(got), test.want)
+		})
+	}
 }

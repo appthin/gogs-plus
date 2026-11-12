@@ -1,6 +1,7 @@
 package tool
 
 import (
+	"crypto/hmac"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -68,26 +69,25 @@ func VerifyTimeLimitCode(data string, minutes int, code string) bool {
 
 	// split code
 	start := code[:12]
-	lives := code[12:18]
-	if d, err := strconv.Atoi(lives); err == nil {
-		minutes = d
+	lives, err := strconv.Atoi(code[12:18])
+	if err != nil || lives <= 0 {
+		return false
 	}
 
 	// right active code
-	retCode := CreateTimeLimitCode(data, minutes, start)
-	if retCode == code && minutes > 0 {
-		// check time is expired or not
-		before, _ := time.ParseInLocation("200601021504", start, time.Local)
-		now := time.Now()
-		if before.Add(time.Minute*time.Duration(minutes)).Unix() > now.Unix() {
-			return true
-		}
+	retCode := CreateTimeLimitCode(data, lives, start)
+	if !hmac.Equal([]byte(retCode), []byte(code)) {
+		return false
 	}
 
-	return false
+	// The code expires by the lifetime it was issued with or the currently
+	// configured one, whichever is shorter, so that lowering the configured
+	// lifetime also applies to codes already sent.
+	before, _ := time.ParseInLocation("200601021504", start, time.Local)
+	return before.Add(time.Minute*time.Duration(min(lives, minutes))).Unix() > time.Now().Unix()
 }
 
-const TimeLimitCodeLength = 12 + 6 + 40
+const TimeLimitCodeLength = 12 + 6 + 64
 
 // CreateTimeLimitCode generates a time limit code based on given input data.
 // Format: 12 length date time string + 6 minutes string + 40 hexadecimal
