@@ -75,6 +75,7 @@ jobs:
           set -o pipefail
           go test -shuffle=on -v -race -coverprofile=coverage -covermode=atomic -json ./... | tee test-report.json | tparse -all
       - name: Send email on failure
+        continue-on-error: true
         uses: unknwon/send-email-on-failure@89339a1bc93f4ad1d30f3b7e4911fcba985c9adb # v1
         if: ${{ failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         with:
@@ -100,6 +101,7 @@ jobs:
       - name: Run tests with coverage
         run: go test -shuffle=on -v -coverprofile=coverage -covermode=atomic ./...
       - name: Send email on failure
+        continue-on-error: true
         uses: unknwon/send-email-on-failure@89339a1bc93f4ad1d30f3b7e4911fcba985c9adb # v1
         if: ${{ failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         with:
