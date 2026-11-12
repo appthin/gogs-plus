@@ -1,5 +1,5 @@
-import { useUserInfo } from "@/lib/use-user-info";
 import { subUrl } from "@/lib/url";
+import { useUserInfo } from "@/lib/use-user-info";
 
 export function Footer() {
   const user = useUserInfo();
