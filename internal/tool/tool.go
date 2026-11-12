@@ -87,7 +87,7 @@ func VerifyTimeLimitCode(data string, minutes int, code string) bool {
 	return before.Add(time.Minute*time.Duration(min(lives, minutes))).Unix() > time.Now().Unix()
 }
 
-const TimeLimitCodeLength = 12 + 6 + 64
+const TimeLimitCodeLength = 12 + 6 + 40
 
 // CreateTimeLimitCode generates a time limit code based on given input data.
 // Format: 12 length date time string + 6 minutes string + 40 hexadecimal
